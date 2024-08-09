@@ -20,22 +20,23 @@ def step(grid):
     for x in range(grid.shape[0]):
         for y in range(grid.shape[1]):
             alive_neighbors = count_alive_neighbors(grid, x, y)
-            if grid[x, y]: # Si la celda está viva
-                if alive_neighbors < 2 or alive_neighbors > 3:
-                    new_grid[x, y] = False # Muere por bajo o alto num de vecinos
-            else: # Activa la celda como viva cuando los vecinos son 3
-                if alive_neighbors == 3:
-                    new_grid[x, y] = True
+            if grid[x, y] and rules[0] <= alive_neighbors <= rules[3]: 
+               new_grid[x, y] = True
+            elif not grid[x, y] and rules[2] <= alive_neighbors <= rules[3]:
+                new_grid[x, y] = True
+            else:
+                new_grid[x,y] = False
     return new_grid
 
 # Actualiza la ventana con las nuevas posiciones de las celdas
-def update(frame, img, grid):
-    new_grid = step(grid)
+def update(img, grid, rules):
+    new_grid = step(grid, rules)
     img.set_data(new_grid)
     grid[:] = new_grid[:] 
     return [img]
 
 # Variables de inicio
+rules = (3, 10, 1, 6) # (D, S, R, O)
 dims = (50, 50)
 alive_probability = 0.2
 seed = 313
@@ -45,6 +46,6 @@ grid = create_grid(dims, alive_probability, seed)
 fig, ax = plt.subplots()
 img = ax.imshow(grid, cmap='gray', interpolation='nearest')
 
-ani = animation.FuncAnimation(fig, update, fargs=(img, grid), frames=60, interval=100, save_count=50)
+ani = animation.FuncAnimation(fig, update, fargs=(img, grid, rules), frames=60, interval=100, save_count=50)
 
 plt.show()

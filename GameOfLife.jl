@@ -1,11 +1,10 @@
-# modified by: Ramon Alberto Gomez Urquidez / A01254784
 # to install the library
 using Pkg; Pkg.add("Agents")
 using Agents, Random
 
 # Rules definition.
 # The rules of Conway's game of life are defined based on four numbers: Death, Survival, Reproduction, Overpopulation, grouped as (D, S, R, O) Cells die if the number of their living neighbors is <D or >O, survive if the number of their living neighbors is ≤S, come to life if their living neighbors are ≥R and ≤O.
-rules = (3, 10, 1, 6) # (D, S, R, O)
+rules = (2, 3, 3, 3) # (D, S, R, O)
 
 # We don't actually need agents, just cellular automaton
 @agent struct Automaton(GridAgent{2}) end
@@ -13,8 +12,8 @@ rules = (3, 10, 1, 6) # (D, S, R, O)
 # The following function builds a 2D cellular automaton given some rules. dims is a tuple of integers determining the width and height of the grid environment. metric specifies how to measure distances in the space, and in our example it actually decides whether cells connect to their diagonal neighbors or not. :chebyshev includes diagonal, :manhattan does not.
 # Initially the cells are dead. 
 function build_model(rules::Tuple;
-        alive_probability = 0.5,
-        dims = (50, 50), metric = :chebyshev, seed = 313
+        alive_probability = 0.2,
+        dims = (100, 100), metric = :chebyshev, seed = 42
     )
     space = GridSpaceSingle(dims; metric)
     properties = Dict(:rules => rules)
@@ -59,7 +58,7 @@ function alive_neighbors(pos, model) # count alive neighboring cells
     c = 0
     @inbounds for near_pos in nearby_positions(pos, model)
         if model.status[near_pos...] == true
-            c += 5
+            c += 1
         end
     end
     return c
@@ -79,7 +78,7 @@ plotkwargs = (
     heatarray = :status,
     heatkwargs = (
         colorrange = (0, 1),
-        colormap = cgrad([:blue, :red]; categorical = true),
+        colormap = cgrad([:white, :black]; categorical = true),
     ),
 )
 
@@ -88,6 +87,6 @@ abmvideo(
     model;
     title = "Game of Life",
     framerate = 10,
-    frames = 100,
+    frames = 60,
     plotkwargs...,
 )
