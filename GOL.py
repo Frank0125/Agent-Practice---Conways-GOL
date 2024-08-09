@@ -1,79 +1,50 @@
-# Libraries
-
-import random
-import mesa
-from mesa import Agent, Model
-from mesa.time import SimultaneousActivation
-from mesa.space import Grid
 import numpy as np
-import pandas as pd
-import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
+# Genera el grid de size dims, y de forma aleatoria pone cuales 
+# celdas estan vivas o no al inicio
+def create_grid(dims, alive_probability=0.2, seed=None):
+    if seed:
+        np.random.seed(seed)
+    return np.random.choice([False, True], size=dims, p=[1 - alive_probability, alive_probability])
 
-# Rules definition.
-# The rules of Conway's game of life are defined based on four numbers: Death, Survival, Reproduction, Overpopulation, grouped as (D, S, R, O) Cells die if the number of their living neighbors is <D or >O, survive if the number of their living neighbors is ≤S, come to life if their living neighbors are ≥R and ≤O.
+# Contador de los vecinos vivos dentro del area alrededor de la celda
+def count_alive_neighbors(grid, x, y):
+    neighborhood = grid[max(0, x-1):x+2, max(0, y-1):y+2]
+    alive_neighbors = np.sum(neighborhood) - grid[x, y]
+    return alive_neighbors
 
-rules = (3, 10, 1, 6) # (D, S, R, O)
+def step(grid):
+    new_grid = grid.copy()
+    for x in range(grid.shape[0]):
+        for y in range(grid.shape[1]):
+            alive_neighbors = count_alive_neighbors(grid, x, y)
+            if grid[x, y]: # Si la celda está viva
+                if alive_neighbors < 2 or alive_neighbors > 3:
+                    new_grid[x, y] = False # Muere por bajo o alto num de vecinos
+            else: # Activa la celda como viva cuando los vecinos son 3
+                if alive_neighbors == 3:
+                    new_grid[x, y] = True
+    return new_grid
 
-"""  """
+# Actualiza la ventana con las nuevas posiciones de las celdas
+def update(frame, img, grid):
+    new_grid = step(grid)
+    img.set_data(new_grid)
+    grid[:] = new_grid[:] 
+    return [img]
 
-class Automaton(Agent):
-    def __init__(self, pos, model, isAlive=False):
-        super().__init__(pos, model)
-        self.pos = pos
-        self.isAlive = isAlive
+# Variables de inicio
+dims = (50, 50)
+alive_probability = 0.2
+seed = 313
 
-    def alive_neighbors(self):
-        neighbors = self.model.grid.iter_neighbors(self.pos, moore=True, include_center=False)
-        return sum([1 for n in neighbors if n.isAlive])
+grid = create_grid(dims, alive_probability, seed)
 
-    def step(self):
-        n = self.alive_neighbors()
-        # continuar ahorita que sepa qp
+fig, ax = plt.subplots()
+img = ax.imshow(grid, cmap='gray', interpolation='nearest')
 
-class Build_Model(Model):
-    def __init__(self, rules, alive_probability = 0.5, dims=(50,50), seed=313):
-        self.rules = rules
-        self.dims = dims
-        self.schedule = SimultaneousActivation(self)
-        self.grid = Grid(dims[0], dims[1], torus=True)
-        self.grid_new = 
+ani = animation.FuncAnimation(fig, update, fargs=(img, grid), frames=60, interval=100, save_count=50)
 
-"""  """
-
-class buildModel(Model):
-    
-    def __init__(self, N, rules, aliveProbability=0.5, dims=(50, 50), seedRNG=123):
-        super().__init__()
-        self.num_agents = N
-        self.width, self.height = dims
-        self.grid = mesa.space.MultiGrid(self.width, self.height, True)
-        self.schedule = mesa.time.RandomActivation(self)
-
-        for i in range(self.num_agents):
-            a =  Automaton(i, self)
-            self.schedule.add(a)
-
-            x = self.random.randrange(self.grid.width)
-            y = self.random.randrange(self.grid.height)
-            self.grid.place_agent(a, (x, y))
-
-    def step(self, pos):
-        #First check if alive
-        live = self.isAlive
-        preLive = self.isAlive
-
-        # Count alive neighbors
-        n = self.alive_neighbors(pos)
-        
-        # Apply the Game of Life rules
-        if live and self.rules[0] <= n <= self.rules[1]:
-            self.isAlive[pos] = True
-        elif not live and self.rules[2] <= n <= self.rules[3]:
-            self.isAlive[pos] = True
-        else:
-            self.isAlive[pos] = False
-
-        self.schedule.step()
-
-
+plt.show()
